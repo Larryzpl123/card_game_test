@@ -1,0 +1,12 @@
+Equip: Sky Cutter
+Description: [Attack] cards +10 damage.
+Tags: Sword,Gilgamesh
+Equip: Heaven's Height
+Description: When equipped by a [Mesopotamia][Babylon] hero with [Divinity], draw one extra card per turn.
+Tags: Clay Tablet,Gilgamesh
+Equip: Sharp Wood Arrow
+Description: After using [Attack] card, restore 20 HP. When having negative states, can use [Herb] card to restore 20 HP and remove states, extra restore 20 HP after removal.
+Tags: Arrow,Shennong
+Equip: Expedition Robe
+Description: Reduce damage from [Attack] cards by 10 points
+Tags: Robe,Achilles

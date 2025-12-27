@@ -1,0 +1,18 @@
+Decision: Restart
+Description: Discard all hand cards, then draw 5 from the top of the deck.
+Tags: Basic
+Decision: Prepare Action
+Description: Draw two cards from the top of the deck.
+Tags: Basic
+Decision: Steel Will
+Description: Roll a die, if 2,4,5 remove one layer of all negative states, otherwise draw one card.
+Tags: Basic
+Decision: Sustained Combat
+Description: Put the bottom 5 cards from the discard pile to the bottom of the deck.
+Tags: Basic
+Decision: Perseverance
+Description: For two turns, if taking single damage equal to or higher than max HP, retain 10 HP and put the top 2 cards from discard to the bottom of the deck.
+Tags: Basic
+Decision: Break the Cauldron
+Description: Discard all hand, take 20 damage, remove all negative states, attack damage +10, but each attack use also reduces self HP by 10.
+Tags: Decision,Xiang Yu

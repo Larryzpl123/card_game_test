@@ -1,0 +1,36 @@
+States:
+Most skills with state effects specify the number of layers, maximum layers, and duration.
+Negative states:
+Control type:
+Slowdown/Slow/Sluggish
+Cannot use action cards
+Bound/Restricted
+Cannot use action or equipment cards
+Paralyzed
+Cannot use action, equipment, or decision cards
+Rooted
+Cannot use hero active skills or action cards
+Frozen/Ice Sealed
+Cannot use hero active skills, action, or equipment cards
+Suppressed
+Cannot use hero active skills, action, equipment, or decision cards
+Sealed
+Cannot use hero active skills, equipment skills, action, equipment, or decision cards
+Banished
+Cannot use hero active skills, passive skills, equipment skills, action, equipment, or decision cards
+Damage type:
+Poisoned
+Take 10 damage per turn, stackable
+Bleeding
+Take 10 damage + number of turns damage has been taken (first turn 10, second turn 20, and so on).
+Positive states:
+Inspired
+Draw one extra card at the start of each turn, stackable
+High Spirits
+For attack [action] cards, rolls of 1, 3, or 6 all count as crits
+Revenge
+Each layer increases the next attack by 10 damage, clear all layers after attacking.
+Special states
+Damage type:
+Terminal
+Take 10 damage per turn, stackable, no layer limit, infinite duration, cannot be removed by any means

@@ -1,0 +1,15 @@
+Rules
+A deck contains 50 cards.
+The deck includes:
+1 hero card, 0-5 special cards, 0-10 decision cards, 0-10 equipment cards, 1-50 action cards.
+The total must be 50 cards.
+At the start, remove the hero card from the deck.
+Same name rules:
+[Special] cards can only be carried as one.
+Non-[Special] decision and equipment cards can be carried up to two.
+Action cards can be carried in any number.
+Initially draw 5 cards, then draw two cards per turn.
+The first player cannot use decision cards or attack on the first turn.
+Used cards go to the discard pile.
+The team loses if all heroes on the same team lose all HP.
+If the deck has no cards when drawing, take damage equal to the maximum HP.

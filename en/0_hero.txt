@@ -1,0 +1,14 @@
+Hero: Gilgamesh
+HP: 200
+Ability: King's Treasury|Active|Once per turn|Reveal the top 5 cards from the discard pile, put [attack] cards back into the deck. Then shuffle the discard pile.
+Tags: Hero,Humanoid,Demigod,Human,Mesopotamia,Babylon,Divinity
+Hero: Shennong
+HP: 230
+Ability: Shennong Tastes Hundred Herbs|Passive||[Herb] cards extra restore 10 HP.
+Ability: Intestine-Breaking Herb|Passive||Under [Poison] state, extra lose poison layers x10 HP per turn.
+Tags: Hero,Humanoid,Human,God,Divinity
+Hero: Achilles
+HP: 250
+Ability: Styx's Protection|Passive||Reduce damage from [Attack] by 10 points
+Ability: Achilles Heel|Passive||When receiving [Crit], extra lose 20 HP.
+Tags: Demigod,Human,Humanoid,Divinity

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Card Game</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; color: #333; }
+        #game { display: none; }
+        .player, .opponent { border: 1px solid #ccc; padding: 10px; margin: 10px; }
+        .hand-card { border: 1px solid #aaa; padding: 5px; margin: 5px; cursor: pointer; display: inline-block; }
+        .hand-card:hover { background-color: #ddd; }
+        #log { border: 1px solid #eee; padding: 10px; height: 200px; overflow-y: scroll; }
+    </style>
+</head>
+<body>
+    <select id="language">
+        <option value="zh">Chinese</option>
+        <option value="en">English</option>
+    </select>
+    <button onclick="startGame()">Start Game</button>
+    <div id="game">
+        <div class="player" id="player">
+            <h2>Player</h2>
+            <p>Hero: <span id="player-hero"></span></p>
+            <p>HP: <span id="player-hp"></span> / <span id="player-maxhp"></span></p>
+            <p>Deck Size: <span id="player-deck"></span></p>
+            <p>Discard Size: <span id="player-discard"></span></p>
+            <div id="player-hand"></div>
+            <div id="player-equip"></div>
+            <div id="player-states"></div>
+        </div>
+        <div class="opponent" id="opponent">
+            <h2>Opponent</h2>
+            <p>Hero: <span id="opponent-hero"></span></p>
+            <p>HP: <span id="opponent-hp"></span> / <span id="opponent-maxhp"></span></p>
+            <p>Deck Size: <span id="opponent-deck"></span></p>
+            <p>Discard Size: <span id="opponent-discard"></span></p>
+            <div id="opponent-equip"></div>
+            <div id="opponent-states"></div>
+        </div>
+        <button onclick="endTurn()">End Turn</button>
+        <div id="log"></div>
+    </div>
+    <script>
+        let lang = 'zh';
+        let heroes = [];
+        let actions = [];
+        let equips = [];
+        let decisions = [];
+        let rules = '';
+        let states = '';
+        let gameState = {
+            currentTurn: 'player',
+            turnNumber: 1,
+            player: { hero: null, hp: 0, maxHp: 0, deck: [], hand: [], discard: [], equips: [], states: [] },
+            opponent: { hero: null, hp: 0, maxHp: 0, deck: [], hand: [], discard: [], equips: [], states: [] }
+        };
+
+        async function loadData(selectedLang) {
+            lang = selectedLang;
+            try {
+                rules = await fetch(`${lang}/rules.txt`).then(res => res.text());
+                states = await fetch(`${lang}/states.txt`).then(res => res.text());
+                const heroText = await fetch(`${lang}/0_hero.txt`).then(res => res.text());
+                heroes = parseCards(heroText, 'hero');
+                const actionText = await fetch(`${lang}/0_action.txt`).then(res => res.text());
+                actions = parseCards(actionText, 'action');
+                const equipText = await fetch(`${lang}/0_equip.txt`).then(res => res.text());
+                equips = parseCards(equipText, 'equip');
+                const decisionText = await fetch(`${lang}/0_decision.txt`).then(res => res.text());
+                decisions = parseCards(decisionText, 'decision');
+                if (heroes.length === 0 || actions.length === 0) {
+                    throw new Error('Failed to parse cards. Check file formats and console for details.');
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+                alert('Failed to load game data. Check console for errors and ensure files are accessible via a local server.');
+                throw error;
+            }
+        }
+
+        function parseCards(text, type) {
+            const cards = [];
+            const lines = text.split('\n');
+            let current = null;
+
+            const cardPrefix = lang === 'zh' 
+                ? (type === 'hero' ? '英雄' : type === 'action' ? '行动' : type === 'equip' ? '装备' : '决意')
+                : type.charAt(0).toUpperCase() + type.slice(1);
+            const descPrefix = lang === 'zh' ? '描述' : 'Description';
+            const abilityPrefix = lang === 'zh' ? '能力' : 'Ability';
+            const hpPrefix = lang === 'zh' ? '血量' : 'HP';
+            const tagsPrefix = lang === 'zh' ? '标签' : 'Tags';
+
+            for (let line of lines) {
+                line = line.trim();
+                if (line.startsWith(cardPrefix + ':')) {
+                    if (current) cards.push(current);
+                    current = { name: line.split(':')[1].trim(), type, desc: '', abilities: [], tags: [] };
+                } else if (line.startsWith(descPrefix + ':')) {
+                    current.desc = line.split(':')[1].trim();
+                } else if (line.startsWith(abilityPrefix + ':')) {
+                    const parts = line.split(':')[1].trim().split('|');
+                    current.abilities.push({ name: parts[0].trim(), atype: parts[1] ? parts[1].trim() : '', limit: parts[2] ? parts[2].trim() : '', desc: parts[3] ? parts[3].trim() : '' });
+                } else if (line.startsWith(hpPrefix + ':')) {
+                    current.hp = parseInt(line.split(':')[1].trim());
+                } else if (line.startsWith(tagsPrefix + ':')) {
+                    current.tags = line.split(':')[1].trim().split(',').map(t => t.trim());
+                }
+            }
+            if (current) cards.push(current);
+            console.log(`Parsed ${type} cards:`, cards); // For debugging
+            return cards;
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function drawCards(player, num) {
+            for (let i = 0; i < num; i++) {
+                if (player.deck.length === 0) {
+                    logMessage('Deck empty! Taking damage equal to max HP.');
+                    player.hp -= player.maxHp;
+                    if (player.hp <= 0) endGame(player === gameState.player ? 'opponent' : 'player');
+                    return;
+                }
+                player.hand.push(player.deck.pop());
+            }
+        }
+
+        function buildDeck() {
+            // Simplified deck: 10 actions (mix), 5 equips, 5 decisions. Edit files to change.
+            const baseActions = actions.flatMap(a => Array(2).fill({...a})); // Duplicate for count
+            const baseEquips = equips.map(e => ({...e}));
+            const baseDecisions = decisions.map(d => ({...d}));
+            return shuffle([...baseActions, ...baseEquips, ...baseDecisions]);
+        }
+
+        function applyHeroAbilities(hero, player) {
+            hero.abilities.forEach(ability => {
+                if (ability.atype.toLowerCase() === (lang === 'zh' ? '被动' : 'passive')) {
+                    // Apply passive (simplified; e.g., for Styx's Protection, reduce attack damage in play logic)
+                    player.states.push(ability.name); // Track for effects
+                }
+            });
+        }
+
+        function startGame() {
+            const selectedLang = document.getElementById('language').value;
+            loadData(selectedLang).then(() => {
+                document.getElementById('game').style.display = 'block';
+                gameState.player.hero = heroes[Math.floor(Math.random() * heroes.length)];
+                gameState.opponent.hero = heroes[Math.floor(Math.random() * heroes.length)];
+                gameState.player.maxHp = gameState.player.hp = gameState.player.hero.hp || 200;
+                gameState.opponent.maxHp = gameState.opponent.hp = gameState.opponent.hero.hp || 200;
+                gameState.player.deck = buildDeck();
+                gameState.opponent.deck = buildDeck();
+                applyHeroAbilities(gameState.player.hero, gameState.player);
+                applyHeroAbilities(gameState.opponent.hero, gameState.opponent);
+                drawCards(gameState.player, 5);
+                drawCards(gameState.opponent, 5);
+                updateUI();
+                logMessage('Game started. Player goes first (no decision/attack on turn 1).');
+            }).catch(error => {
+                console.error('Game start failed:', error);
+            });
+        }
+
+        function playCard(cardIndex, player) {
+            const isPlayer = player === gameState.player;
+            if (!isPlayer && gameState.currentTurn !== 'opponent') return;
+            if (isPlayer && gameState.currentTurn !== 'player') return;
+            const card = player.hand.splice(cardIndex, 1)[0];
+            player.discard.push(card);
+            let damage = 0;
+            let heal = 0;
+            let crit = false;
+            const roll = Math.floor(Math.random() * 6) + 1;
+            if (card.name.toLowerCase().includes('attack') || (lang === 'zh' && card.name.includes('攻击'))) {
+                damage = 20;
+                if (roll === 6) { crit = true; damage += 20; }
+                if (gameState.turnNumber === 1 && isPlayer) return logMessage('Cannot attack on first turn.');
+                // Apply hero effects (e.g., Achilles Heel)
+                if (crit && gameState.opponent.states.includes(lang === 'zh' ? '阿喀琉斯之踵' : 'Achilles Heel')) {
+                    damage += 20;
+                }
+                const target = isPlayer ? gameState.opponent : gameState.player;
+                target.hp -= damage;
+                logMessage(`${isPlayer ? 'Player' : 'Opponent'} attacks for ${damage} damage${crit ? ' (crit)' : ''}.`);
+                if (target.hp <= 0) endGame(isPlayer ? 'player' : 'opponent');
+            } else if (card.name.toLowerCase().includes('herb') || (lang === 'zh' && card.name.includes('草药'))) {
+                heal = 10;
+                player.hp = Math.min(player.hp + heal, player.maxHp);
+                logMessage(`${isPlayer ? 'Player' : 'Opponent'} heals for ${heal} HP.`);
+            } // Add more effect logic as needed (e.g., defense reduces next damage, thunder strike skips draw)
+            // Simplified state apply: if desc mentions state, add to states
+            if (card.desc.includes('poison') || card.desc.includes('中毒')) player.states.push('poison');
+            updateUI();
+        }
+
+        function aiTurn() {
+            if (gameState.opponent.hand.length > 0) {
+                const randomIndex = Math.floor(Math.random() * gameState.opponent.hand.length);
+                playCard(randomIndex, gameState.opponent);
+            }
+            endTurn();
+        }
+
+        function endTurn() {
+            if (gameState.currentTurn === 'player') {
+                gameState.currentTurn = 'opponent';
+                drawCards(gameState.opponent, 2);
+                aiTurn();
+            } else {
+                gameState.currentTurn = 'player';
+                gameState.turnNumber++;
+                drawCards(gameState.player, 2);
+            }
+            // Apply turn-start states (e.g., poison damage)
+            [gameState.player, gameState.opponent].forEach(p => {
+                if (p.states.includes(lang === 'zh' ? '中毒' : 'Poisoned')) {
+                    p.hp -= 10;
+                    logMessage('Poison damage: -10 HP.');
+                    if (p.hp <= 0) endGame(p === gameState.player ? 'opponent' : 'player');
+                }
+            });
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('player-hero').textContent = gameState.player.hero.name;
+            document.getElementById('player-hp').textContent = gameState.player.hp;
+            document.getElementById('player-maxhp').textContent = gameState.player.maxHp;
+            document.getElementById('player-deck').textContent = gameState.player.deck.length;
+            document.getElementById('player-discard').textContent = gameState.player.discard.length;
+            document.getElementById('player-hand').innerHTML = '';
+            gameState.player.hand.forEach((card, i) => {
+                const div = document.createElement('div');
+                div.className = 'hand-card';
+                div.textContent = card.name;
+                div.onclick = () => playCard(i, gameState.player);
+                document.getElementById('player-hand').appendChild(div);
+            });
+            document.getElementById('player-equip').textContent = 'Equips: ' + gameState.player.equips.map(e => e.name).join(', ');
+            document.getElementById('player-states').textContent = 'States: ' + gameState.player.states.join(', ');
+            // Opponent UI (hide hand)
+            document.getElementById('opponent-hero').textContent = gameState.opponent.hero.name;
+            document.getElementById('opponent-hp').textContent = gameState.opponent.hp;
+            document.getElementById('opponent-maxhp').textContent = gameState.opponent.maxHp;
+            document.getElementById('opponent-deck').textContent = gameState.opponent.deck.length;
+            document.getElementById('opponent-discard').textContent = gameState.opponent.discard.length;
+            document.getElementById('opponent-equip').textContent = 'Equips: ' + gameState.opponent.equips.map(e => e.name).join(', ');
+            document.getElementById('opponent-states').textContent = 'States: ' + gameState.opponent.states.join(', ');
+        }
+
+        function logMessage(msg) {
+            const log = document.getElementById('log');
+            log.innerHTML += `<p>${msg}</p>`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function endGame(winner) {
+            logMessage(`${winner.toUpperCase()} wins!`);
+            document.getElementById('game').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

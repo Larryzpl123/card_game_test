@@ -1,0 +1,18 @@
+Action: Attack
+Description: Initiate a 20 point damage attack, roll a die, 6 for crit, crit damage +20 points.
+Tags: Action,Basic Action
+Action: Defense
+Description: Reduce the next attack's 10 point damage.
+Tags: Action,Basic Action
+Action: Herb
+Description: Restore 10 HP.
+Tags: Action,Basic Action
+Action: Thunder Strike
+Description: Initiate a 50 point damage attack. Cannot draw next turn. [No crit]
+Tags: Action
+Action: Iron Wall
+Description: Reduce all opponent attacks by 10 damage, lasts one turn. Cannot draw next turn.
+Tags: Action
+Action: Pharmacy
+Description: Restore 20 HP. Herb heal +10 for 1 turn, next turn Herb heal +10.
+Tags: Action
